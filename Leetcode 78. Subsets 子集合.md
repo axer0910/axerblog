@@ -1,4 +1,4 @@
-###Leetcode 78. Subsets 子集
+###Leetcode 78. Subsets 子集合
 
 Example:
 
