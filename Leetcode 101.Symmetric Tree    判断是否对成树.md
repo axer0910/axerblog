@@ -1,20 +1,15 @@
-###Leetcode 101.Symmetric Tree    判断是否对成树
+---
+title: Leetcode 101.Symmetric Tree    判断是否对成树
+tag: 刷题
+---
+###
 
 Given a binary tree, check whether it is a mirror of itself (ie, symmetric around its center).
 
 For example, this binary tree [1,2,2,3,4,4,3] is symmetric:
-
-　　1
- 　/\
-　2 　  　2
-/ 　\　 / \
-3  　4 4　 3
+![Alt text](./blogpics/1555662081469.png)
 But the following [1,2,2,null,3,null,3] is not:
-    　1
-   /　 　\
-  2  　 　2
-   \　　 　  \
-   　3   　　 3
+![Alt text](./blogpics/1555662092661.png)
 
 可以用递归解决，首先判断当前检查的左右两个节点是否相等，然后判断左节点和右节点是否存在，如果只存在一边那么肯定不是成对的。如果左右两边都不存在那么当前递归判断已经到底返回true，否则就继续往下递归即可。
 ```Javascript

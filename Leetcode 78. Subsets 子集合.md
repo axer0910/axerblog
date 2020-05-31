@@ -1,4 +1,7 @@
-###Leetcode 78. Subsets 子集合
+---
+title: Leetcode 78. Subsets 子集合
+tag: 刷题
+---
 
 Example:
 
