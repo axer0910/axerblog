@@ -215,6 +215,63 @@ export default {
 
 我们在Vue项目中使用`Vuex`，主要是解决不同层级的组件能够共享同一个数据状态，多个组件某个部分展示的状态来共同依赖同一个公共的状态。但是在`Vuex`中，需要遵循一个特定的结构，如定义`state`来定义数据状态结构，定义`mutations`来定义修改数据状态的逻辑，定义`actions`来定义异步修改数据状态的方法。在组件中如果要引用`vuex`中的数据状态，还需要通过`mapState`，`mapGetters`等函数去映射到组件中去。这个写法在项目中随着时间的推移难免会显得有些冗余。得益于Composition Api能将数据定义在任何地方，或许能够实现`vuex`本来所实现的变量提升的功能，不再使用那些冗余的Api。
 
+Vuex强调的是一个**单一状态树**，这个状态树位于所有Vue组件之上。先参照官方文档实现一个简单的vuex结构：
+
+```html
+<div id="app">
+    <my-counter></my-counter>
+    <another-counter></another-counter>
+    <button @click="add">increment</button>
+</div>
+```
+
+```javascript
+const store = new Vuex.Store({
+    state: {
+        count: 0
+    },
+    mutations: {
+        ADD_COUNT(state) {
+            state.count ++;
+        }
+    }
+})
+const MyCounter = {
+  template: `<div>{{ count }}</div>`,
+  computed: {
+    count () {
+      return store.state.count
+    }
+  }
+}
+const AnotherCounter = {
+  template: `<div>multipled by 2：{{ count }}</div>`,
+  computed: {
+    count () {
+      return store.state.count * 2
+    }
+  }
+}
+new Vue({
+    el: '#app',
+    store,
+    components: { MyCounter, AnotherCounter },
+    methods: {
+        add() {
+            this.$store.commit('ADD_COUNT');
+        }
+    }
+})
+```
+
+我们在vuex的`state`中添加了一个`count`属性并初始化为0，并且定义了一个修改state的mutation`ADD_COUNT`方法，每调用一次就自增1。要在组件中使用，需要定义一个computed属性，返回state中的count以便组件中引用。所有相关的方法，都需要按部就班地按照设置`state`，`mutations`，并在`computed`中引用store，如果有异步接口操作还需要在`actions`中定义，如果`state`比较复杂可能还需要在`module`中进行拆分，整个结构的灵活度是比较低的。
+
+再来看看如何用Composition Api来定义类似的store状态管理：
+
+
+我们可以利用`reactive`定义一个全局的状态树，并且设置一些修改状态的方法，这样就很简单地达到和vuex一样的作用。
+
+
 
 ##### 类型推导 
 
