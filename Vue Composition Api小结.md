@@ -93,13 +93,134 @@ const state = reactive({
 ```
 使用`reactive`定义了一个`state`，`state`中包含了属性`count`。当设置`state.count = 1`，模板也会相应进行更新。更新state也可以说是产生了一个副作用（side effect）。在composition api中也有观察这种副作用的api。
 
+
+##### computed
+
+在Vue2.x的Options Api里面，我们知道有一个选项叫`computed`，它的作用是依赖其他响应式变量并实时计算出经过转换后的值。在上个例子中，假设对响应式对象`state`要实时取得它的`count`属性乘以2的结果：
+
+```javascript
+import { reactive, computed } from 'vue'
+
+const state = reactive({
+  count: 0
+})
+
+const double = computed(() => state.count * 2)
+```
+这里的`double`应该是什么类型？`state.count * 2`之后的类型结果应该是数字，那么在经过`computed`返回的结果应该也是数字。如何在模板里使用`double`，并且观察它的变化呢？我们知道在模板里引用了一个对象或变量，实际上是告诉Vue被引用的对象或变量“订阅”了这个变量的变化，这个变量变化后需要让Vue重新渲染视图。如果`computed`返回的`double`类型是数字，我们知道JavaScript中原始类型（`string,number,boolean,null,undefined`）是不能给他们设置`getter`，`setter`或者`proxy`来“通知”Vue这些变量的变化关系，那怎么在模板里使用这个原始类型的值呢？既然在对象上可以设置`getter`或者`proxy`，那么只要返回一个对象，并且将它的属性放置在`value`属性里，给`value`属性设置监听器，就可以知道它的变更了。这个产生包装变量的函数叫做`ref`，它会返回一个响应式对象，里面只有一个`value`属性，并将传入的类型为原始类型的值设置到`value`上面。实际上，`computed`函数可以简化理解为类似下面代码的实现：
+
+```javascript
+function computed(getter) {
+  const ref = ref(null)
+  watchEffect(() => {
+    ref.value = getter()
+  })
+  return ref
+}
+```
+
 ##### ref
 
+除了在`computed`里面会返回一个经过`ref`包装后的对象，我们也可以直接使用`ref`函数：
 
+```javascript
+const count = ref(0)
+console.log(count.value) // 0
+
+count.value++
+console.log(count.value) // 1
+```
+
+到这里可能有些读者会产生一个问题，我在模板里使用经过`ref`包装后的对象，需不需要在模板里指定引用它的value属性来取它的值呢？其实是不需要的，在模板里，Vue会自动对`Ref`包装变量进行解构，取它的`value`属性。
+
+```javascript
+import { ref, watchEffect } from 'vue'
+
+const count = ref(0)
+
+function increment() {
+  count.value++
+}
+
+const renderContext = {
+  count,
+  increment
+}
+
+watchEffect(() => {
+  renderTemplate(
+    `<button @click="increment">{{ count }}</button>`, // 不需要写成{{ count.value }} vue会自动引用它的value属性
+    renderContext
+  )
+})
+```
+
+在上面代码里，使用了`count`Ref包装对象来代替第一个例子里`state`响应式对象里的`count`属性。`ref`方法提供了一种更加灵活的方式，不要求模板一定要使用某个响应式对象上的属性来形成订阅关系，只要变量最后经过`ref`来包装，就能有依赖追踪的效果。
+
+##### 在组件里的使用
+
+在有了`reactive`, `ref`这些方法，当需要实现一套响应式逻辑的时候，无需在组件代码里依靠`data()`，`computed()`，`watch()`这些选项实现逻辑，逻辑可以被放在任意一个文件，函数，类里面，只要在最后暴露给组件，模板引用的是响应式对象，就能动态实现数据更新后实时更新模板，提升了代码复用性，逻辑也可以被更合理的组织，不被组件代码所“绑架”。在Vue组件里，使用了`setup()`代替了之前所有生命周期以及各类选项。生命周期都被放在函数式api中指定，并在`setup()`函数里进行初始化：
+
+```javascript
+<template>
+  <button @click="increment">
+    Count is: {{ state.count }}, double is: {{ state.double }}
+  </button>
+</template>
+
+<script>
+import { reactive, computed } from 'vue'
+
+export default {
+  setup() {
+    const state = reactive({
+      count: 0,
+      double: computed(() => state.count * 2)
+    })
+
+    function increment() {
+      state.count++
+    }
+
+    return {
+      state,
+      increment
+    }
+  }
+}
+</script>
+```
+
+使用`onMounted`，`onCreated`, `onActivated`等函数实现组件生命周期钩子，组件将在每一个生命周期触发对应的回调：
+
+```javascript
+import { onMounted, onActivated } from 'vue'
+
+export default {
+  setup() {
+    onCreated(() => {
+      console.log('component is created!')
+    })
+    onMounted(() => {
+      console.log('component is mounted!')
+    })
+    onActivated(() => {
+      console.log('component is activated!')
+    })
+  }
+}
+```
+
+#### 代替vuex
+
+我们在Vue项目中使用`Vuex`，主要是解决不同层级的组件能够共享同一个数据状态，多个组件某个部分展示的状态来共同依赖同一个公共的状态。但是在`Vuex`中，需要遵循一个特定的结构，如定义`state`来定义数据状态结构，定义`mutations`来定义修改数据状态的逻辑，定义`actions`来定义异步修改数据状态的方法。在组件中如果要引用`vuex`中的数据状态，还需要通过`mapState`，`mapGetters`等函数去映射到组件中去。这个写法在项目中随着时间的推移难免会显得有些冗余。得益于Composition Api能将数据定义在任何地方，或许能够实现`vuex`本来所实现的变量提升的功能，不再使用那些冗余的Api。
+
+
+##### 类型推导 
 
 #### 封装一些组件的思路（rollupjs打包）
 
-#### 代替vuex
+
 
 ,
 
