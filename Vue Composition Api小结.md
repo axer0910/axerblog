@@ -91,7 +91,11 @@ const state = reactive({
   <p>count is {{ state.count }}</p>
 </template>
 ```
-使用`reactive`定义了一个`state`，`state`中包含了属性`count`。当`state.count = 1`，模板
+使用`reactive`定义了一个`state`，`state`中包含了属性`count`。当设置`state.count = 1`，模板也会相应进行更新。更新state也可以说是产生了一个副作用（side effect）。在composition api中也有观察这种副作用的api。
+
+##### ref
+
+
 
 #### 封装一些组件的思路（rollupjs打包）
 
