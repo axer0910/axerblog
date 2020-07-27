@@ -88,26 +88,18 @@ const state = reactive({
 
 使用`reactive`定义了一个可响应的`state`，`state`中包含了属性`count`。当对`state`的属性进行修改时，如`state.count = 1`，会通知模板在引用的地方进行更新。在Vue3.0中，实现这种响应式的机制实际上是使用了一个`Proxy`来对原始对象添加响应依赖包装后进行返回，在2.x中，实际上是调用了`Vue.observable()`在对象上每个属性设置了setter和getter。无论是`Proxy`还是`setter``getter`，都是为了保证在引用或修改属性的时候让Vue知道数据的改动，这样才能取对应地进行视图更新。
 
-当更新了响应式对象，这个时候就需要对DOM进行更新，或者运行其他watch这个变量的回调，这个过程可以叫做副作用（side effect），指的是对当前代码运行上下文环境外部的系统的交互或者修改。对vue而言，就是与不在vue运行过程中的那部分系统（比如DOM，或者用户自定义的代码）进行交互。在Composition Api中，`watch`和`watchEffect`可以观察产生的副作用。在修改上面`state`响应式对象后，使用`watchEffect`来对DOM进行更新：
+当更新了响应式对象，此时需要对DOM进行更新，或者运行其他watch这个变量的回调，这个过程可以叫做副作用（side effect），指的是对当前代码运行上下文环境外部的系统的交互或者修改。对vue而言，就是与不在vue运行过程中的那部分系统（比如DOM，或者用户自定义的代码）进行交互。在Composition Api中，`watch`和`watchEffect`可以观察产生的副作用。假设先抛开vue的模板系统，在修改上面`state`响应式对象后，使用`watchEffect`来对DOM进行更新：
 
 ```javascript
 watchEffect(() => {
   document.body.innerHTML = `count is ${state.count}`
 })
 ```
-<<<<<<< HEAD
 
 `watchEffect`接受了一个回调，在发生副作用行为的时候立即运行这个回调, `watch`函数与`watchEffect`类似，只不过是观察某一个特定的响应式属性，当这个属性产生副作用时运行回调（功能与Vue2.x一致）。
 
-##### Computed State 和 Refs
 
-##### 在组件中使用
-
-#### 代替vuex
-
-=======
 使用`reactive`定义了一个`state`，`state`中包含了属性`count`。当设置`state.count = 1`，模板也会相应进行更新。更新state也可以说是产生了一个副作用（side effect）。在composition api中也有观察这种副作用的api。
-
 
 ##### computed
 
@@ -281,24 +273,143 @@ new Vue({
 
 我们在vuex的`state`中添加了一个`count`属性并初始化为0，并且定义了一个修改state的mutation`ADD_COUNT`方法，每调用一次就自增1。要在组件中使用，需要定义一个computed属性，返回state中的count以便组件中引用。所有相关的方法，都需要按部就班地按照设置`state`，`mutations`，并在`computed`中引用store，如果有异步接口操作还需要在`actions`中定义，如果`state`比较复杂可能还需要在`module`中进行拆分，整个结构的灵活度是比较低的。
 
-再来看看如何用Composition Api来定义类似的store状态管理：
 
+再来看看如何用Composition Api来定义类似的store状态管理，我们可以利用`reactive`定义一个全局的状态树，并且设置一些修改状态的方法，这样就很简单地达到和vuex一样的作用。
 
-我们可以利用`reactive`定义一个全局的状态树，并且设置一些修改状态的方法，这样就很简单地达到和vuex一样的作用。
+```html
+<div id="app">
+    <my-counter></my-counter>
+    <another-counter></another-counter>
+    <button @click="addCount">increment</button>
+</div>
+```
 
+```javascript
+const { reactive, computed } = VueCompositionAPI
+const storeState = reactive({
+        count: 0
+    });
+const addCount = () => {
+    storeState.count ++;
+}
+const MyCounter = {
+  template: `<div>{{ storeState.count }}</div>`,
+  setup() {
+    return { storeState }
+  }
+}
+const AnotherCounter = {
+  template: `<div>multipled by 2：{{ count }}</div>`,
+  setup() {
+    const count = computed(() => storeState.count * 2);
+    return { count }
+  }
+}
+new Vue({
+    el: '#app',
+    components: { MyCounter, AnotherCounter },
+    setup() {
+        return { addCount }
+    }
+})
+```
 
+与上面vuex的代码相比较，使用了composition api更加符合平时编写代码的逻辑，无需再一些特定属性里面定义数据状态，修改数据状态的一些方法，也减少了固定Api的使用，可以按照自己的想法封装修改状态的函数。唯一的一问题是暂时没有办法实现vuex自带的time-travel功能（记录每次修改状态的操作）。
 
 ##### 类型推导 
 
->>>>>>> c2c96a0e8f7e0e89dae4b7b7522961ce566ad2e6
+在Vue3.0中一个设计主要设计目标是增强对 TypeScript 的支持，所以在3.0中的代码所有框架代码都使用了TypeScript编写。在尤大的博客中，本来是期望使用Class Api达成这个目标，但是经过原型开发阶段后发现有很多问题，就改用了函数来实现。使用class风格的api有这么几个问题：
+
+* 将vue组件上的属性合并到this上下文
+* 装饰器问题
+* 打包尺寸
+
+
+了解过vue2.x的class-component-api中，为了在类里其他的函数使用props以及获取类型推导，常常需要通过各类装饰器来为class中的this添加类型推导支持（有些如`this.$refs`，无法事先添加类型推导只能手动断言），实现非常绕，明显不是一个好的路线。再一个就是装饰器的问题。目前TS中的装饰器实现已经与TC39规范相差甚远，目前装饰器在JS中也只是一个stage-2的提案，未来这个语法的特性很不确定。再一个就是class对tree-shaking不是很友好，不利于优化打包尺寸。
+
+在TypeScript中，函数是对类型推导来说相对支持最好，无论是参数，泛型，返回值都有着不错的支持，并且函数实现的代码经过编译后与TS相差不大，基本就是抹去了类型。同时基于函数的 API可以被单独作为ES Module引入，自然打包尺寸更加容易控制。
+
+
+
 #### 封装一些组件的思路（rollupjs打包）
 
+动态配置化，表单状态提升实现复杂联动（脱离组件层面依赖，复用表单联动逻辑）
 
 
-<<<<<<< HEAD
-=======
-,
->>>>>>> c2c96a0e8f7e0e89dae4b7b7522961ce566ad2e6
+在做偏业务管理后台的时候，经常会使用到Element UI来进行快速页面搭建，其中最常见的就是表单需求。在Element UI中，典型的表单由`el-form`组件以及`el-form-item`组件构成，官方例子如下：
 
+```html
+<el-form ref="form" :model="form" label-width="80px">
+  <el-form-item label="活动名称">
+    <el-input v-model="form.name"></el-input>
+  </el-form-item>
+  <el-form-item label="活动区域">
+    <el-select v-model="form.region" placeholder="请选择活动区域">
+      <el-option label="区域一" value="shanghai"></el-option>
+      <el-option label="区域二" value="beijing"></el-option>
+    </el-select>
+  </el-form-item>
+  <el-form-item label="活动时间">
+    <el-col :span="11">
+      <el-date-picker type="date" placeholder="选择日期" v-model="form.date1" style="width: 100%;"></el-date-picker>
+    </el-col>
+    <el-col class="line" :span="2">-</el-col>
+    <el-col :span="11">
+      <el-time-picker placeholder="选择时间" v-model="form.date2" style="width: 100%;"></el-time-picker>
+    </el-col>
+  </el-form-item>
+  <el-form-item label="即时配送">
+    <el-switch v-model="form.delivery"></el-switch>
+  </el-form-item>
+  <el-form-item label="活动性质">
+    <el-checkbox-group v-model="form.type">
+      <el-checkbox label="美食/餐厅线上活动" name="type"></el-checkbox>
+      <el-checkbox label="地推活动" name="type"></el-checkbox>
+      <el-checkbox label="线下主题活动" name="type"></el-checkbox>
+      <el-checkbox label="单纯品牌曝光" name="type"></el-checkbox>
+    </el-checkbox-group>
+  </el-form-item>
+  <el-form-item label="特殊资源">
+    <el-radio-group v-model="form.resource">
+      <el-radio label="线上品牌商赞助"></el-radio>
+      <el-radio label="线下场地免费"></el-radio>
+    </el-radio-group>
+  </el-form-item>
+  <el-form-item label="活动形式">
+    <el-input type="textarea" v-model="form.desc"></el-input>
+  </el-form-item>
+  <el-form-item>
+    <el-button type="primary" @click="onSubmit">立即创建</el-button>
+    <el-button>取消</el-button>
+  </el-form-item>
+</el-form>
+<script>
+  export default {
+    data() {
+      return {
+        form: {
+          name: '',
+          region: '',
+          date1: '',
+          date2: '',
+          delivery: false,
+          type: [],
+          resource: '',
+          desc: ''
+        }
+      }
+    },
+    methods: {
+      onSubmit() {
+        console.log('submit!');
+      }
+    }
+  }
+</script>
+```
+
+#### 总结
+
+缺点：可能过于灵活，缺少了约束代码会更加开放。
 
 
