@@ -71,9 +71,9 @@ const { ref, onMounted, onUnmounted, createApp } = Vue;
 
 #### 使用细节
 
-在Vue中，整个框架最核心的一点其实是**响应式**，整个框架模板的渲染展示都是围绕着变量，react和vue的模板渲染都是围绕这一点，一种数据状态对应一种模板渲染的状态。react和vue的区别在于，react的数据更新都是需要通过一个更新函数主动push去更新，产生一个新的数据状态以及相对应的渲染状态。vue的话修改一个变量后，框架检测到这个变量的修改后，模板中找到引用依赖这个变量的地方再对这一块的渲染实施更新。
+在Vue中，整个框架最核心的一点其实是**响应式**，整个框架模板的渲染展示都是围绕着变量，react和vue的模板渲染都是围绕这一点，一种数据状态对应一种模板渲染的状态。Compostion Api的灵感来自于React Hook，React和Vue有一个显著区别在于，React的数据更新都是需要通过一个更新函数主动push更新，产生一个新的数据状态以及相对应的渲染状态。Vue的话修改一个变量后，框架检测到这个变量的修改后，模板中找到引用依赖这个变量的地方再对这一块的渲染实施更新。所以在Api的设计上，React Hook的`useState`会多返回一个函数用来更新变量，Vue的Api则只需要直接修改变量就可达到响应更新的效果。
 
-围绕着可响应这一点，先从如何定义响应式变量开始。
+首先来了解一下定义响应式对象的Api：
 
 ##### reactive
 
@@ -85,19 +85,29 @@ const state = reactive({
   count: 0
 })
 ```
-模板：
-```html
-<template>
-  <p>count is {{ state.count }}</p>
-</template>
-```
-使用`reactive`定义了一个`state`，`state`中包含了属性`count`。当`state.count = 1`，模板
 
-#### 封装一些组件的思路（rollupjs打包）
+使用`reactive`定义了一个可响应的`state`，`state`中包含了属性`count`。当对`state`的属性进行修改时，如`state.count = 1`，会通知模板在引用的地方进行更新。在Vue3.0中，实现这种响应式的机制实际上是使用了一个`Proxy`来对原始对象添加响应依赖包装后进行返回，在2.x中，实际上是调用了`Vue.observable()`在对象上每个属性设置了setter和getter。无论是`Proxy`还是`setter``getter`，都是为了保证在引用或修改属性的时候让Vue知道数据的改动，这样才能取对应地进行视图更新。
+
+当更新了响应式对象，这个时候就需要对DOM进行更新，或者运行其他watch这个变量的回调，这个过程可以叫做副作用（side effect），指的是对当前代码运行上下文环境外部的系统的交互或者修改。对vue而言，就是与不在vue运行过程中的那部分系统（比如DOM，或者用户自定义的代码）进行交互。在Composition Api中，`watch`和`watchEffect`可以观察产生的副作用。在修改上面`state`响应式对象后，使用`watchEffect`来对DOM进行更新：
+
+```javascript
+watchEffect(() => {
+  document.body.innerHTML = `count is ${state.count}`
+})
+```
+
+`watchEffect`接受了一个回调，在发生副作用行为的时候立即运行这个回调, `watch`函数与`watchEffect`类似，只不过是观察某一个特定的响应式属性，当这个属性产生副作用时运行回调（功能与Vue2.x一致）。
+
+##### Computed State 和 Refs
+
+##### 在组件中使用
 
 #### 代替vuex
 
-,
+#### 封装一些组件的思路（rollupjs打包）
+
+
+
 
 
 
