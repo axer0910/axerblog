@@ -14,6 +14,8 @@ updated: 2019-08-05
 * 添加`\flutter\.pub-cache\bin`到环境变量
 * 添加dart sdk `\flutter\bin\cache\dart-sdk\bin`到环境变量
 
+<!-- more -->
+
 ### 测试运行demo ###
 *  clone flutter_web项目：`git clone https://github.com/flutter/flutter_web.git`
 *  在这个项目里有若干个demo在examples文件夹里，里面有**Flutter Gallery**在web上的实现。

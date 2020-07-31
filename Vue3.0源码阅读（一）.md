@@ -84,6 +84,8 @@ const { ref, onMounted, onUnmounted, createApp } = Vue;
 * Vue的`setup`只会在组件创建的时候运行一次，与react的hooks相比，定义的hooks将会在组件每次重新渲染的时候调用，这就导致如果在条件语句或循环里面定义hooks，可能会导致很多意料之外的问题。vue的setup由于只调用一次不会有这方面的问题。初次之外，还要关心各种调用顺序，渲染顺序。
 * 生命周期方面：react hooks弱化了生命周期的概念，废弃了很多如`componentWillMount、 componentWillUpdate、 componentWillReceiveProp`这类方法，Composition API则基本保留了2.x时代所有的生命周期方法。
 
+<!-- more -->
+
 ### 组件如何被setup以及只被运行一次的？###
 
 vue3.0的初始化组件从`new vue(option)`改为了`createApp(option)`这种形式。让我们从`createApp`这个函数开始看起。

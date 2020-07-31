@@ -62,6 +62,8 @@ leetcode没找到对应的题目，暂时先记录一下思路
 
 https://leetcode.com/problems/fibonacci-number/
 
+<!-- more -->
+
 8. #### 跳台阶
 9. #### 变态跳台阶
 

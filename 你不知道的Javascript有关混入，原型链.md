@@ -44,6 +44,8 @@ var Car = mixin(Vehicle, {
 ```
 Car对象"继承了"Vehicle对象。在Car对象里的`Vehicle.drive.call(this);`这句话就是显式多态。JS里并没有多态的机制，必须通过call方法显示调用指定对象的方法（这里是Vehicle里的drive方法）。 
 
+<!-- more -->
+
 隐式混入：
 ```javascript
 var Something = {

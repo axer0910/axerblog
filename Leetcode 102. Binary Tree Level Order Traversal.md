@@ -1,8 +1,8 @@
 ---
 title: Leetcode 102. Binary Tree Level Order Traversal
 tag: 算法
-date: 2019-03-20
-updated: 2019-03-20
+date: 2019-04-23
+updated: 2019-04-23
 ---
 
 Given a binary tree, return the level order traversal of its nodes' values. (ie, from left to right, level by level).

@@ -1,11 +1,16 @@
-###Leetcode 记录2：two sum
+---
+title: Leetcode 2：two sum
+tag: 算法
+date: 2019-03-06
+updated: 2019-03-06
+---
 
  Given nums = [2, 7, 11, 15], target = 9,
  
  Because nums[0] + nums[1] = 2 + 7 = 9,
 return [0, 1].
 先用target减掉数组里每个元素，最后再寻找剩下数组里有没有target减掉的那个数即可。
-```
+```javascript
 var twoSum = function(nums, target) {
     for (let index in nums) {
         let num = nums[index];
@@ -21,7 +26,7 @@ var twoSum = function(nums, target) {
 };
 ```
 优化后，把减数存到一个空间里，nums每次遍历只需要查找目标减数在不在这个空间里，减少`nums.indexOf(endTarget)`这步查找的次数。
-```
+```javascript
 var twoSum = function(nums, target) {
     // 把所有需要寻找的减数存起来
     let res = {};

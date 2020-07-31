@@ -23,6 +23,8 @@ updated: 2019-08-08
 ##### 如何开机进入TWRP
 线刷TWRP的时候，关闭auto reboot，刷完以后先按bixby+音量减+电源键退出download mode，在黑屏的一瞬间马上按bixby+音量上+电源键进入TWRP，如果没有成功进入，那么需要重新执行一遍线刷rec的过程。
 
+<!-- more -->
+
 ##### 在刷入过程中遇到的问题：
 * 线刷出现红色FAILED，提示**only official released binaries are allowed to be flashed**：我在oem解锁了以后恢复完出厂设置以后没有完成设置直接关机，然后打开odin3准备线刷TWRP就开始就出现了FAILED，并且手机上出现了这行红色英文。后来一检查KG State出现的是prenomal，解锁的状态应该是checking，这就表明并没有OEM解锁成功，重启以后进入开发者菜单发现找不到oem解锁的选项。后来网上经过查找，三星系统oem解锁系统重设后重启后需要先通过rmm.samsung.com验证oem解锁状态，然后在rmm相关存储里标记为解锁才是真正解锁。如果没联网，开发者选项里是看不到oem解锁这个选项的。解决方法嘛，再解锁一次oem，记得进行联网，在开发者选项里检查一下是否是已解锁状态，再重启到download模式就好了。
 

@@ -30,6 +30,9 @@ const appEntry = { app: resolve('./src/main.ts') } // 小程序app入口
 const pagesEntry = getEntry(resolve('./src'), 'pages/**/main.ts') // 小程序每个page的入口
 const entry = Object.assign({}, appEntry, pagesEntry)
 ```
+
+<!-- more -->
+
 添加ts和tsx支持：
 ```javascript
 resolve: {

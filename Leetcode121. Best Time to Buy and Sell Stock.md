@@ -1,4 +1,9 @@
-###Leetcode121. Best Time to Buy and Sell Stock
+---
+title: Leetcode121. Best Time to Buy and Sell Stock最佳买卖股票时机
+tag: 算法
+date: 2019-04-23
+updated: 2019-04-23
+---
 
 Say you have an array for which the ith element is the price of a given stock on day i.
 

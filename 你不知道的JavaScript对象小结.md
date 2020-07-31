@@ -52,6 +52,8 @@ console.log(obj[String]); // test string
 console.log(String.toString()); // function String() { [native code] }
 console.log(obj['function String() { [native code] }']); // 结果和obj[String]一样，会把String对象转换成字符串作为键再设置内容。
 ```
+<!-- more -->
+
 es6支持属性名计算，可以在[]里面放一个表达式：
 ```javascript
 let perfix= 'my';

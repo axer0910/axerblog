@@ -14,6 +14,8 @@ inotify是linux自带的一个高效的检测文件实时改动的一个api，in
 要是像下图那样列出三条记录那么就是支持的
 ![Alt text](./1556876648002.png)
 
+<!-- more -->
+
 #### 安装：
 ```
 wget https://jaist.dl.sourceforge.net/project/inotify-tools/inotify-tools/3.13/inotify-tools-3.13.tar.gz

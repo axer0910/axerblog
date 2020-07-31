@@ -28,6 +28,7 @@ updated: 2020-04-23
 * 设置mode为production
 * todo：公用模块拆分，css提取等
 
+<!-- more -->
 
 webpack.base.js:
 ```javascript
