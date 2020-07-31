@@ -13,7 +13,7 @@ vue3.0的响应式系统是独立的，在`@vue/reactivity`的readme中，清楚
 
 我们先来看一下这套源代码里面一个简单的ref与effect的单元测试实现基本的响应式效果：
 
-```
+```javascript
 it('should be reactive', () => {
     const a = ref(1) // 通过ref包装数值1并作为响应式变量赋值给a，读写a的值需要通过a.value实现
     let dummy
@@ -32,7 +32,7 @@ effect可以理解为在观测的对象发生变化以后，执行的回调。Vu
 
 来看一下effect函数的定义：
 reactivity/src/effect.ts
-```
+```javascript
 // 接受一个回调并创建一个effect
 export function effect<T = any>(
   fn: () => T,
@@ -50,7 +50,7 @@ export function effect<T = any>(
 }
 ```
 effect将通过createReactiveEffect这个工厂函数创建一个响应式回调，
-```
+```javascript
 const effectStack: ReactiveEffect[] = []
 export let activeEffect: ReactiveEffect | undefined // 这个变量很重要，表明当前需要被deps收集的回调
 
@@ -100,7 +100,7 @@ effect是对传入函数进行的一层包装，在effec函数的定义当中，
 
 在运行ref(1)的过程中发生了什么呢？
 来看看ref函数定义：
-```
+```javascript
 function createRef(value: unknown, shallow = false) {
   if (isRef(value)) {
     return value
@@ -134,7 +134,7 @@ function createRef(value: unknown, shallow = false) {
 ref主要是对原始值类型如 string 和 number 这种只有值的变量实现追踪响应，因为在js里面，只有一个值没有办法给它设置额外的属性，所以通过将它包装为对象的方法再包装一层，里面加上value对象以及getter和setter，实现依赖追踪各种需要触发的操作。
 
 ref中，访问`value`属性的时候，会将被访问对象自身添加到依赖追踪的集合中，具体实现方法:
-```
+```javascript
 const targetMap = new WeakMap<any, KeyToDepMap>() // targetMap中保存着目标变量的引用->键值关系
 const effectStack: ReactiveEffect[] = []
 export let activeEffect: ReactiveEffect | undefined
@@ -164,7 +164,7 @@ export function track(target: object, type: TrackOpTypes, key: unknown) {
 // todo 画个图
 ###变量更新
 修改一个由ref对象包装的值，需要直接对它的`value`属性进行修改，重新赋值。修改`value`时候，将会触发`value`上的`getter`：
-```
+```javascript
 set value(newVal) {
      
       value = shallow ? newVal : convert(newVal) // 如果newVal是一个对象，那么现将它转换为响应式对象再赋值
@@ -178,7 +178,7 @@ set value(newVal) {
     }
 ```
 convert函数里实际上就是将newVal转为reactive对象（后面会再专门分析转换为reactive对象的过程）,然后就开始调用`trigger`函数：
-```
+```javascript
 export function trigger(
   target: object,
   type: TriggerOpTypes,
@@ -245,7 +245,7 @@ export function trigger(
 
 在`trigger`函数定义中，可以看到主要有三个触发类型：`CLEAR`,`数组length的修改`,`ADD,DELETE,SET`。`addRunners`函数判断`effectsToAdd`的类型，如果是`computed`生成的`effect`就添加到`computedRunners`，否则就添加到普通`effects`集合中。
 
-```
+```javascript
 function addRunners(
   effects: Set<ReactiveEffect>,
   computedRunners: Set<ReactiveEffect>,
@@ -271,7 +271,7 @@ function addRunners(
 }
 ```
 执行`effect`
-```
+```javascript
 
 function scheduleRun(
   effect: ReactiveEffect,
@@ -293,7 +293,7 @@ function scheduleRun(
 `computed(getter)`方法可以传入一个getter回调，并且返回一个`ref`响应式对象。（getter只有需要使用的时候才会被运行）每当getter回调里的响应式对象更新了，在其他effect里面有依赖computed对象话这个effect会被重新运行来更新计算后的值。
 
 简单的单元测试示例：
-```
+```javascript
 const refVal = ref(1);
 const cValue = computed(() => refVal.value) // cValue也是一个ref对象，此时() => refVal.value还没有被运行
 let dummy
@@ -305,7 +305,7 @@ refVal.value = 10 // 将refVal改为10，这个时候上面effect里的回调会
 expect(dummy).toBe(10)
 ```
 computed实现：
-```
+```javascript
 export function computed<T>(
   getterOrOptions: ComputedGetter<T> | WritableComputedOptions<T>
 ) {
@@ -375,7 +375,7 @@ export function computed<T>(
 传入的构造参数中，`target`是Proxy需要进行代理的对象。任何需要访问target的操作，都将经过Proxy处理后再返回结果。第二个参数`handler`就是定义具体要代理的行为（最常用的就是定义getter和setter）。
 
 MDN的例子：
-```
+```javascript
 const handler = {
     get: function(obj, prop) { // 定义一个getter，prop键存在返回prop对应的值，否则返回数值37
         return prop in obj ? obj[prop] : 37;
@@ -400,7 +400,7 @@ Vue在创建`reactive`的过程中，还用到了`Reflect`这个es6的特性。`
 * `Reflect.deleteProperty()`作为函数的delete操作符，相当于执行 delete target[name]。
 
 **Reactive实现过程**
-```
+```javascript
 // 入口函数，处理target是只读，或者已经是ref对象的情况
 export function reactive(target: object) {
   // if trying to observe a readonly proxy, return the readonly version.
@@ -461,7 +461,7 @@ function createReactiveObject(
 ```
 主要过程很简单，就是将target传入后将其和对应的handlers设置为Proxy并且返回。一开始两个if的作用主要是防止重复定义响应式对象（比如一个对象的reactive是readonly，再传入reactive防止再次生成响应式）。在这个过程中，没有递归，就是简单的定义一个Proxy。
 那么具体的修改对象和追踪依赖的过程在哪呢？就是在这个`mutableHandlers`里面：
-```
+```javascript
 export const mutableHandlers: ProxyHandler<object> = {
   get, // 调用createGetter
   set, // 调用createSetter
@@ -477,7 +477,7 @@ const set = /*#__PURE__*/ createSetter()
 ```
 #### `getter`的实现 ####
 
-```
+```javascript
 // 创建proxy对象的getter
 function createGetter(isReadonly = false, shallow = false) {
   return function get(target: object, key: string | symbol, receiver: object) {
@@ -531,7 +531,7 @@ const arrayInstrumentations: Record<string, Function> = {}
 * 数组设置的方法也是这个流程，如果target是数组并且操作数组上`'includes', 'indexOf', 'lastIndexOf'`这三个方法中一个，那么先遍历一遍数组并且将每个元素都进行track，再调用目标函数。（当数组被Proxy代理的时候，如果运行`'includes', 'indexOf', 'lastIndexOf'`，Proxy会调用getter给每个元素取值并且返回给方法进行查找）
 
 #### `setter`的实现 ####
-```
+```javascript
 function createSetter(isReadonly = false, shallow = false) {
   return function set(
     target: object,
@@ -573,7 +573,7 @@ function createSetter(isReadonly = false, shallow = false) {
 ```
 总体流程也是先用`Reflect.set`设置值，然后调用`trigger`方法更新去通知响应式更新。这里有一个判断，`target === toRaw(receiver)`的作用？
 从注释上来看似乎和原型链有关系，来看一个例子：[这里参考了这篇博文](https://bengbu-yuezhang.github.io/2019/11/25/vue%E6%BA%90%E7%A0%81/)
-```
+```javascript
 const childProxy = new Proxy({
   name: 'child proxy'
 }, {
@@ -603,7 +603,7 @@ childProxy.newName = 'test2'
 ### Vue3.0组件源码里的应用 ###
 看完了上面的响应式分析，再来回到3.0的组件源码部分。`SetupRenderEffect`这个函数将在完成运行组件`setup`调用后运行。这个`effect`对组件来说非常关键，组件进行初始化，或者需要更新的时候，都会执行这个`effect`，让我们来看一下这个函数：
 renderer.ts 1074行左右，effect回调里分为两部分：组件的子组件渲染初始化以及子组件更新。首先来看一下这个函数的主要部分：
-```
+```javascript
 const setupRenderEffect: SetupRenderEffectFn<HostNode, HostElement> = (
     instance,
     initialVNode,
@@ -631,7 +631,7 @@ const setupRenderEffect: SetupRenderEffectFn<HostNode, HostElement> = (
 
 
 再来回到`effect`传入的函数中，看一下第一次加载渲染根组件调用`render`函数的过程：
-```
+```javascript
 instance.update = effect(function componentEffect() {
       if (!instance.isMounted) {
         // renderComponentRoot将会调用组件上编译好的render函数
@@ -666,7 +666,7 @@ instance.update = effect(function componentEffect() {
 首先第一步就是调用`renderComponentRoot(instance)`，去调用这个组件的`render`函数创建vnode，并且最后返回一个`vnode`作为虚拟dom的根节点（**这也是为什么写模板的时候只允许有一个根节点，在vue内部每个组件只返回一个vnode作为虚拟dom树的根节点**）
 
 为了更好地展示更新流程，这里放一个例子：
-```
+```javascript
  
   const myComp = {
     name: 'myCustomComp',
@@ -706,7 +706,7 @@ instance.update = effect(function componentEffect() {
   }).mount('#app')
 ```
 为了更清晰展示整个组件更新的流程，这里直接写了render函数。在这个例子里，2000毫秒后将会更新子组件`myCustomComp`的`propVal`，`reactiveObj.value`将会调用内置的`trigger`。首先父组件会再次运行`render`函数，在`propVal`发生变化后，`patch`函数将会调用子组件的`instance.update()`调用`effect`更新子组件状态。
-```
+```javascript
 instance.update = effect(function componentEffect() {
       if (!instance.isMounted) {
         // 初始化方法

@@ -30,7 +30,7 @@ updated: 2020-04-23
 
 
 webpack.base.js:
-```
+```javascript
 const path = require("path");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
@@ -122,9 +122,11 @@ module.exports = {
 
 ```
 
+这里`tsx`的模块处理下`option`有一行配置：` appendTsxSuffixTo: [/\.vue$/]`非常重要，这行配置是将`vue`单页面组件文件中的<script lang="ts"></script>标签内所有ts代码关联到`tsx`类型文件，这样script标签内的所有代码才会被TypeScript所编译，不然可能在编译的时候出现没有默认module导出的情况（实际上就是只编译了模板，没有编译export default导出模块的代码）
+
 webpack.dev.js
 
-```
+```javascript
 const merge = require("webpack-merge");
 const base = require("./webpack.base");
 const webpack = require("webpack");
@@ -152,7 +154,7 @@ module.exports = merge(base ,{
 ```
 
 webpack.prod.js
-```
+```javascript
 const merge = require('webpack-merge');
 const base = require("./webpack.base.js");
 const CleanWebpackPlugin = require('clean-webpack-plugin');
@@ -166,7 +168,7 @@ module.exports = merge(base ,{
 
 ```
 tsconfig.json
-```
+```javascript
 {
   "compilerOptions": {
     "target": "esnext",

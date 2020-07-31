@@ -25,7 +25,7 @@ updated: 2020-04-16
 
 对于平时使用vue的我们来说，这其中变化最大的应该新增的**Composition API与Typescipt的支持** , Composition的Api最显著的特点就是移除了各种生命周期的api，转而由一个setup()的函数完成整个组件的初始化过程。在setup函数中，使用**ref, reactive**定义响应式数据对象，使用**computed**定义一个需要经过映射的值，使用**watchEffect**来观察组件状态的变化并且定义改变组件的行为。让我们来看一个来自官方RFC的例子：
 组件代码:
-```
+```javascript
 const { ref, onMounted, onUnmounted, createApp } = Vue;
 
   /*
@@ -151,7 +151,7 @@ export const createApp = ((...args) => {
 }) as CreateAppFunction<Element>
 ```
 真正的`createApp`函数，在`runtime-core/src/apiCreateApp.ts` 专门的一个文件来维护，先从返回的createApp函数app对象类型定义看起：
-```
+```javascript
 export interface App<HostElement = any> {
   config: AppConfig
   use(plugin: Plugin, ...options: any[]): this
@@ -183,7 +183,7 @@ app返回了很多2.x熟悉的一些api：
 * mount 将createApp后返回的app进行挂载
 * unmount 卸载组件
 这些函数功能与vue2.x总体来说是差不多的，先来看看craeteApp中的`mount`函数中做了些什么：
-```
+```javascript
 export function createAppAPI<HostNode, HostElement>(
   render: RootRenderFunction<HostNode, HostElement>,
   hydrate?: (vnode: VNode, container: Element) => void
@@ -238,7 +238,7 @@ return {
 renderer.ts这个文件很长，大约2000左右，里面包含了vue核心的虚拟dom的生成，更新算法，组件的挂载与状态更新，响应式等非常多的内容，后面篇幅会逐渐详细解析里面每一块的作用。
 在mount里面有一个createVNode的函数，这个即为vue里面非常核心的生成虚拟dom节点的方法，先来看一下vnode的定义：
 runtime/src/vnode.ts 这里面都是关于vnode的有关的定义和方法，VNode有关的定义：
-```
+```javascript
 export interface VNode<HostNode = any, HostElement = any> {
   _isVNode: true
   type: VNodeTypes
@@ -271,7 +271,7 @@ export interface VNode<HostNode = any, HostElement = any> {
 这里的虚拟dom的定义和2.0不一样的有一个地方是type，这里的type不仅仅是字符串(2.0对应的是一个tag，一般是一个字符)，这里的type还可以是组件的配置对象。
 
 来看到createVNode的方法实现：
-```
+```javascript
 export function createVNode(
   type: VNodeTypes, // 一般情况下是字符串，也可以是组件选项对象
   props: (Data & VNodeProps) | null = null,
@@ -352,7 +352,7 @@ export function createVNode(
 在这些事情完成了以后，接下来就开始调用render渲染根节点VNode了。运行setup，模板，组件的解析，响应式对象的创建和绑定都将在render这个函数中完成。
 
 上面代码有一个`shapeFlag`的枚举定义，我们先来看一下这个枚举的定义，后面的代码里有多处用到这个枚举：
-```
+```javascript
 export const enum ShapeFlags {
   ELEMENT = 1,
   FUNCTIONAL_COMPONENT = 1 << 1, // 1
@@ -372,7 +372,7 @@ export const enum ShapeFlags {
 `ShapeFlags.STATEFUL_COMPONENT`的值是2（10），`ShapeFlags.FUNCTIONAL_COMPONENT`的值是1（1）他们之间进行或运算二进制就是11(十进制为3)。
 
 再来看到`normalizeChildren`函数：
-```
+```javascript
 // 设置传入children的type
 export function normalizeChildren(vnode: VNode, children: unknown) {
   let type = 0
@@ -397,7 +397,7 @@ export function normalizeChildren(vnode: VNode, children: unknown) {
 
 ####render以及patch节点
 在renderer.ts中1870行左右是mount中用到的render函数的定义
-```
+```javascript
 // 渲染vnode
   const render: RootRenderFunction<HostNode, HostElement> = (
     vnode, // 要解析的vnode
@@ -418,7 +418,7 @@ export function normalizeChildren(vnode: VNode, children: unknown) {
   }
 ```
 来看到patch函数的签名部分：
-```
+```javascript
 const patch: PatchFn<HostNode, HostElement> = (
     n1, // 旧vnode节点，没渲染过之前一定是null
     n2, // 新的等待渲染vnode节点
@@ -435,7 +435,7 @@ const patch: PatchFn<HostNode, HostElement> = (
 了解过一点vue原理的同学应该之前有了解到vue更新组件的机制是比较新旧两颗树，取出其中差异的部分进行更新。n1和n2这个两个参数实际上就是旧节点和新节点，container就是包含渲染后结果的容器元素。这里我们先暂时不了解diff以及更新的过程，来看一下作为一个根组件是如何被初始化，运行setup以及建立响应关系最后插入到dom中的。
 
 从上面mount的过程中可以了解到，n2的类型是一个组件，shapeFlag是STATEFUL_COMPONENT，vnode的type里面包含着一开始就传进来的包含setup()的组件选项。有了这些，patch函数中内部将直接跳转到`processComponent`这个函数：
-```
+```javascript
 const processComponent = (
     n1: HostVNode | null, // n1是旧vnode节点状态
     n2: HostVNode, // n2是当前vnode节点状态
@@ -543,7 +543,7 @@ const mountComponent: MountComponentFn<HostNode, HostElement> = (
 * setupRenderEffect()设置相应式副作用
 
 首先来看一下内部实例是如何创建的：
-```
+```javascript
 export function createComponentInstance(
   vnode: VNode,
   parent: ComponentInternalInstance | null
@@ -662,7 +662,7 @@ export function setupComponent(
 }
 ```
 首先先处理props和组件的slots（插槽）将它们保存到内部实例相应的属性中（暂时跳过SSR的一些代码），然后调用setupStatefulComponent初始化组件，在这一步将会调用组件定义时选项中的setup函数：
-```
+```javascript
 function setupStatefulComponent(
   instance: ComponentInternalInstance,
   parentSuspense: SuspenseBoundary | null
@@ -728,7 +728,7 @@ function setupStatefulComponent(
 如果是render函数的话（通常情况下就是jsx），将略过模板编译，直接使用setup返回的render函数。
 
 handleSetupResult函数：
-```
+```javascript
 export function handleSetupResult(
   instance: ComponentInternalInstance,
   setupResult: unknown,
@@ -761,7 +761,7 @@ export function handleSetupResult(
 }
 ```
 setup中返回对象的例子：
-```
+```javascript
 const MyComponent = {
   props: {
     name: String
