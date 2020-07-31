@@ -353,30 +353,9 @@ new Vue({
     <el-col :span="11">
       <el-date-picker type="date" placeholder="选择日期" v-model="form.date1" style="width: 100%;"></el-date-picker>
     </el-col>
-    <el-col class="line" :span="2">-</el-col>
     <el-col :span="11">
       <el-time-picker placeholder="选择时间" v-model="form.date2" style="width: 100%;"></el-time-picker>
     </el-col>
-  </el-form-item>
-  <el-form-item label="即时配送">
-    <el-switch v-model="form.delivery"></el-switch>
-  </el-form-item>
-  <el-form-item label="活动性质">
-    <el-checkbox-group v-model="form.type">
-      <el-checkbox label="美食/餐厅线上活动" name="type"></el-checkbox>
-      <el-checkbox label="地推活动" name="type"></el-checkbox>
-      <el-checkbox label="线下主题活动" name="type"></el-checkbox>
-      <el-checkbox label="单纯品牌曝光" name="type"></el-checkbox>
-    </el-checkbox-group>
-  </el-form-item>
-  <el-form-item label="特殊资源">
-    <el-radio-group v-model="form.resource">
-      <el-radio label="线上品牌商赞助"></el-radio>
-      <el-radio label="线下场地免费"></el-radio>
-    </el-radio-group>
-  </el-form-item>
-  <el-form-item label="活动形式">
-    <el-input type="textarea" v-model="form.desc"></el-input>
   </el-form-item>
   <el-form-item>
     <el-button type="primary" @click="onSubmit">立即创建</el-button>
@@ -391,11 +370,7 @@ new Vue({
           name: '',
           region: '',
           date1: '',
-          date2: '',
-          delivery: false,
-          type: [],
-          resource: '',
-          desc: ''
+          date2: ''
         }
       }
     },
@@ -408,8 +383,272 @@ new Vue({
 </script>
 ```
 
+在Element UI中，表单配置使用模板来描述，在某些业务场景下（如动态接口下发）我们更希望以类似json对象的形式来更加灵活地表单，假设用以下结构来描述这个表单以及表单项：
+
+```javascript
+  const formItems = [
+    {
+      formLabel: '活动名称',
+      tagName: 'el-input',
+      modelKey: 'name'
+    },
+    {
+      formLabel: '活动区域',
+      tagName: 'el-select',
+      modelKey: 'region',
+      options: [
+        {
+          label: '区域一',
+          value: 'shanghai'
+        },
+        {
+          label: '区域二',
+          value: 'beijing'
+        }
+      ],
+      attrs: {
+        placeholder: '请选择活动区域'
+      }
+    },
+    {
+      formLabel: '活动时间',
+      formItems: [
+        {
+          span: 11,
+          tagName: 'el-time-picker',
+          modelKey: 'date1',
+          attrs: {
+            placeholder: '选择日期',
+            style: {
+              width: '100%'
+            },
+          }
+          props: {
+            type: 'date'
+          }
+        },
+        {
+          span: 11,
+          tagName: 'el-time-picker',
+          modelKey: 'date2',
+          attrs: {
+            placeholder: '选择日期',
+            style: {
+              width: '100%'
+            },
+          }
+          props: {
+            type: 'date'
+          }
+        }
+      ]
+  ]
+```
+
+利用`formLabel`来描述表单项标签文本，`modelKey`标识绑定的数据model属性，`tagName`标识使用的表单项组件名称。有了这个三个属性就能基本描述一个表单的控件。`attrs`和`props`分别对应的是组件的原生`DOM`属性以及组件传入的`props`。（在Vue3.0中，`attrs`可以合并进`props`属性中）。
+
+有了表单配置的描述，还需要可响应式的数据源，使用`reactive`方法快速定义一个可响应的数据源：
+
+```javascript
+  const formModel = reactive({
+    name: '',
+    region: '',
+    date1: '',
+    date2: ''
+  });
+```
+
+有了上述配置，我们可以利用一个工厂函数，生成一个表单控制器：
+
+```javascript
+  const formControl = useElForm(formItems, formModel);
+```
+
+当然此时还需要一个组件，接收一个表单控制器，渲染一个表单，假设这个组件叫做`el-form-control`
+
+```html
+  <el-form-control :form-control="formControl"></el-form-control>
+```
+
+大致实现如下：
+
+```javascript
+  {
+  name: 'ElFormControl',
+  props: {
+    formControl: Object
+  },
+  setup(props) {
+    const formsNods = computed(() => {
+      return renderForms(props.formControl); // 根据表单项配置渲染表单并与表单数据源进行绑定...
+    })
+    return { formsNods }
+  },
+  render(h: CreateElement) {
+    const context = this;
+    const option = {
+      attrs: context.$props.formControl.formAttrs, // 注入el-form配置的属性
+      props: context.$props.formControl.formProps,
+      on: context.$props.formControl.formEvents
+    };
+    return (
+      <el-form {...option} ref="elFormRef">
+        {context.formsNods}
+      </el-form>
+    )
+  }
+}
+```
+
+为了能动态生成表单项组件，这里改为jsx实现整个表单控制器逻辑，在`renderForms`这个函数中，将会利用`createElement`创建VNode来生成表单项组件。
+
+在`render`函数中，`this`实际上被指向`setup`函数返回的响应式对象，render函数需要手动暴露一个`h`以供vue jsx babel插件转换成VNode。在Vue3.0中，`h`会被替换成`context`，就不需要再使用`this`指定上下文。
+
+到此时一个简单的配置化的表单生成器就已经生成了。不过此时的表单还没有提交按钮的配置以及表单验证，所以稍微改造一下`useElForm`的传参方式，为了支持更多类型的参数传入，我们将入参改为对象：
+
+```javascript
+  const formControl = useElForm({
+    formItems,
+    formModel,
+    formRules: [
+      // 配置对象可参考ElementUI的表单验证规则配置，是一个数组
+    ],
+    onRuleValidateSuccess() {
+      // 表单验证成功后运行的回调...
+    }，
+     onRuleValidateFailed() {
+      // 表单验证失败后运行的回调...
+    }
+  });
+```
+
+在渲染表单控制器内，除了渲染表单外再添加一个提交按钮，来运行表单验证以及调用表单验证成功(失败)以后的回调。除了表单验证提交外，`el-form`组件还自带了很多表单方法，这些方法都以`$refs`的方法引用。为了能利用这些方法，需要在`el-form-control`组件`mounted`之后将表单的ref引用设置到`formControl`之上，利用`onMounted`钩子：
+
+```javascript
+  {
+  name: 'ElFormControl',
+  props: {
+    formControl: Object
+  },
+  setup(props) {
+    const elFormRef = ref(null);
+    const formsNods = computed(() => {
+      return renderForms(props.formControl);
+    });
+    onMounted(() => {
+      props.formControl.formContext = elFormRef.value; // 设置el-form组件的ref到control上以便外界使用
+    });
+    return { formsNods }
+  },
+  render(h: CreateElement) {
+    const context = this;
+    const option = {
+      attrs: context.$props.formControl.formAttrs,
+      props: context.$props.formControl.formProps,
+      on: context.$props.formControl.formEvents
+    };
+    return (
+      <el-form {...option} ref="elFormRef">
+        {context.formsNods}
+      </el-form>
+    )
+  }
+}
+```
+
+至此，完整的带有可配置的表单以及表单配置的Api Demo就完成了。在实际业务中，实际上也会有很多表单联动类的需求。假设一个下拉框的列表需要依赖其他下拉框的选择，依靠`ref`, `computed`，`watch`几个函数，很容易实现响应式逻辑，并且实现复用：
+
+```javascript
+
+const useRegionSelect = (formModel) => {
+
+  const placeOptionsList = ref([]);
+  const formRegionItems = computed(() => {
+    return [
+      {
+        formLabel: '活动区域',
+        tagName: 'el-select',
+        modelKey: 'region',
+        options: [
+          {
+            label: '区域一',
+            value: 'shanghai'
+          },
+          {
+            label: '区域二',
+            value: 'beijing'
+          }
+        ],
+        attrs: {
+          placeholder: '请选择活动区域'
+        }
+      },
+      {
+        formLabel: '会场',
+        tagName: 'el-select',
+        modelKey: 'place',
+        options: getRegionOptions()
+        attrs: {
+          placeholder: '请选择活动区域'
+        }
+      }
+    ];
+  });
+
+  watch(() => formModel.region, () => {
+    // 模拟接口请求，并且设置下拉选项列表
+    setTimeout(() => {
+      placeOptionsList.value = mapList(getPlaceList(formModel.region)); // placeOptionsList更新后也会动态重新生成formItems配置
+    });
+  });
+
+  return { formRegionItems };
+}
+
+setup() {
+  const formModel = reactive({
+    date1: '',
+    date2: '',
+    region: '',
+    place: ''
+  });
+
+  const { formRegionItems } = useRegionSelect(formModel); // 获得响应式的表单下拉联动表单配置选项
+
+  const formItems = computed(() => {
+    return [
+      // ...其他表单项配置,
+      ...formRegionItems.value,
+      // ...其他表单项配置,
+    ];
+  });
+  const formControl = useElForm({
+    formItems,
+    formModel,
+    formRules: [
+      // 配置对象可参考ElementUI的表单验证规则配置，是一个数组
+    ],
+    onRuleValidateSuccess() {
+      // 表单验证成功后运行的回调...
+    }，
+     onRuleValidateFailed() {
+      // 表单验证失败后运行的回调...
+    }
+  });
+  return { formControl }
+}
+
+```
+
+```html
+  <el-form-control :form-control="formControl"></el-form-control>
+```
+
+自定义实现一个`useRegionSelect`工厂方法，根据`formModel`的状态动态生成表单项配置。由于`useRegionSelect`里面的状态定义是和组件无关的，因此可以复用到任何一个表单组件中去。在以往`options api`的方案中，实现联动得借助`computed`,`watch`这几个选项。虽然可以将联动的一些具体逻辑封装到外部函数中，但是仍然需要在引用的每个组件里的`computed`,`watch`调用自定义封装的逻辑。显然Composition Api的方法显得更加简洁易用。
+
+
 #### 总结
 
-缺点：可能过于灵活，缺少了约束代码会更加开放。
+本文简单介绍了Composition Api的用法，以及在表单中具体的工程实践。Composition Api最大的特点是能够用更灵活的方式实现组件化和功能封装。相对于Mixin和HOC方案，Composition Api将生命周期以及响应式选项脱离了组件具体实现，通过观察者模式灵活实现了逻辑分离。同时在TypeScript中与`vue-class-component`相比函数式Api实现了更好的类型推导。
 
-
+不过在实际业务代码开发角度而言，由于Composition Api代码编写方式更加灵活，组件中使用了一个单一的`setup`选项进行逻辑初始化代替了以往`data`，`computed`，`watch`各个选项和生命周期，在业务代码开发中缺少了这些选项函数的约束，团队每个人对Composition Api理解不同可能造成代码逻辑组织上较大的差异，可能会增加Code Review的工作量来保证代码编写风格一致。
