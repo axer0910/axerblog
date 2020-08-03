@@ -1,6 +1,6 @@
 ---
 title: Vue Composition Api使用小结
-tag: 源码分析
+tag: frontend
 date: 2020-07-16
 updated: 2020-07-16
 ---
@@ -332,7 +332,7 @@ new Vue({
 
 
 
-#### 封装一些组件的思路（rollupjs打包）
+#### 封装一些组件的思路
 
 动态配置化，表单状态提升实现复杂联动（脱离组件层面依赖，复用表单联动逻辑）
 

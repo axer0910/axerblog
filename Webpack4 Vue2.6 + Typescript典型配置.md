@@ -1,6 +1,6 @@
 ---
 title: Webpack4 Vue2.6 + Typescript典型配置
-tag: 前端
+tag: frontend
 date: 2020-04-23
 updated: 2020-04-23
 ---

@@ -1,6 +1,6 @@
 ---
 title: Vue组件使用自定义v-model
-tag: 源码分析
+tag: frontend
 date: 2018-12-29
 updated: 2018-12-29
 ---

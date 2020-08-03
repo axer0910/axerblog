@@ -104,6 +104,8 @@ var maxArea = function(heights) {
     return rsHead;
 };
  ```
+
+ <!-- more -->
  
 #### 3.最长回文子串
 
@@ -234,7 +236,7 @@ var letterCombinations = function(digits) {
 };
 ```
 
-#### Leetcode 19.Remove Nth Node From End of List
+#### 19.Remove Nth Node From End of List
 
 Given linked list: 1->2->3->4->5, and n = 2.
 
@@ -609,7 +611,7 @@ var permute = function(nums) {
 };
 ```
 
-#### Leetcode 78. Subsets 子集合
+#### 78. Subsets 子集合
 
 Example:
 
@@ -645,7 +647,7 @@ var subsets = function(nums) {
 };
 ```
 
-#### Leetcode 94. Binary Tree Inorder Traversal 二叉树中序遍历
+#### 94. Binary Tree Inorder Traversal 二叉树中序遍历
 
 Given a binary tree, return the inorder traversal of its nodes' values.
 
@@ -854,7 +856,7 @@ var levelOrder = function(root) {
 };
 ```
 
-#### Leetcode 114. Flatten Binary Tree to Linked List]
+#### 114. Flatten Binary Tree to Linked List]
 
 Given a binary tree, flatten it to a linked list in-place.
 

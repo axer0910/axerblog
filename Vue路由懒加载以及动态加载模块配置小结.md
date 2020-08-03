@@ -1,6 +1,6 @@
 ---
 title: Vue路由懒加载以及动态加载模块配置小结
-tag: 源码分析
+tag: frontend
 date: 2018-12-24
 updated: 2018-12-24
 ---
